@@ -1,0 +1,127 @@
+---
+title: "Stat184 Final Project - Yuzhe Wang"
+date: "Dec 13,2020"
+output: html_notebook
+---
+##Guiding Question:
+
+I am a fan of NBA games.So I decided to expolore the NBA players dataset.Recently, there has been speculation that the way NBA basketball is playing is changing. Specifically, from the perspective of more teams than in previous years, the game has become more offensive and the game has accelerated. Especially there are more three-pointers existing in many games. I will dive into the 2014-2018 team data and the historical player data of each NBA player ever played in to try to determine whether this is a reality.
+
+
+###data sources
+-Where did you find them? 
+kaggle datasource1: https://www.kaggle.com/ionaskel/nba-games-stats-from-2014-to-2018 
+-Who collected/maintains them? Ionas Kelepouris
+-When? 3 years ago
+-Why were they originally collected? Understand the impact of every statistic category in wins and losses.
+kaggle datasource2: https://www.kaggle.com/drgilermo/nba-players-stats?select=Seasons_Stats.csv
+-Who collected/maintains them? Omri Goldstein
+-When? 3 years ago
+-Why were they originally collected? The data-set contains aggregate individual statistics for 67 NBA seasons since 1950
+
+###Imorting and Inspecting Datasets 
+```{r}
+#Data Access 
+NBAData <- read.csv("nba.games.stats.csv") #Data Source 1
+AllTime <- read.csv("Seasons_Stats.csv")   #Data Source 2
+head(NBAData)  #DataAccess
+nrow(NBAData)  #DataAccess
+head(AllTime)
+nrow(AllTime)
+```
+
+###Libraries Used
+```{r, warning = FALSE, message = FALSE}
+#Libraries
+library(dplyr)
+library(tidyverse)
+library(lubridate)
+```
+
+###User-defined Function 
+
+```{r}
+#determine if a team is East or West(custom settings)
+whichConf <- function(team){
+  if (team %in% c("ATL", "BOS", "BRK" ,"CHI", "CHO", 
+                  "CLE", "DET", "IND", "MIA", "MIL", 
+                  "NYK", "ORL", "PHI", "TOR", "WAS")){
+    return("East")
+  }
+  else {
+    return("West")
+  }
+} #Wrangling 4 (Control flow with if-else statement)
+```
+
+
+###Data Wrangling
+```{r, warning = FALSE}
+#Visualizing Change of amounts of threes taken per year for each team 
+ModifiedNBA <-
+NBAData %>%
+  mutate(Date = year(lubridate::ymd(Date))) %>%  #Wrangling1
+  group_by(Team,Date) %>%
+  summarise(AvgThree = mean(X3PointShotsAttempted))  #Wrangling2
+NewModified <-
+  ModifiedNBA %>%
+  mutate(Conf = whichConf(Team)) #Wrangling3 (Using the user-defined function)
+```
+
+
+###Data Visualization (1)
+```{r, warning = FALSE}
+#Visualizing Change of amounts of threes taken per year for each team 
+ModifiedNBA <-
+NBAData %>%
+  mutate(Date = year(lubridate::ymd(Date))) %>%  #Wrangling1
+  group_by(Team,Date) %>%
+  summarise(AvgThree = mean(X3PointShotsAttempted))  #Wrangling2
+NewModified <-
+  ModifiedNBA %>%
+  mutate(Conf = whichConf(Team)) #Wrangling3 (Using the user-defined function)
+NewModified %>%
+  ggplot(aes(x = Date, y = AvgThree, group = Team)) +
+  geom_line(size = 1, alpha = 0.5, aes(color = Team)) +
+  facet_wrap(~Conf, dir = "v") #Visualization 1 and 2
+```
+
+In the figure above, I visualize the average number of three points each team scored from 2014 to 2018.
+In both East and West conference, the average number of three points per game has increased during this time. This partially indicates that the overall trend is that there are more and more three-pointers made in reacent seasons.
+It's somewhat answer the guiding question.
+I also.
+
+###Data Visualization (2)
+The three point line was not introduced until 1979, so I will only be looking at data starting from that point for my historic player data. This is considered by many to be a 'turning point' in NBA history.
+```{r}
+HistData <-
+AllTime %>%
+  filter(Year >= 1979)
+HistRebounds <-
+HistData %>%
+  group_by(Year) %>%
+  summarise(AvgReb = mean(TRB.))
+HistRebounds %>%
+  ggplot(aes(x = Year, y = AvgReb)) +
+  geom_point(na.rm = TRUE) +
+  geom_smooth(method = 'lm', se = FALSE, na.rm = TRUE) #Visualization3
+```
+In the plot above I'm showing the average amount of rebounds per game through all players for each year between 1979 and 2017.
+As we can see, the rebound appears to be increasing over the years which means the game pace are getting faster because if there are more rebounds there are more opportunity to score and produce offences.
+
+###Linear Regression Analysis
+
+```{r}
+linearMod <- lm(FieldGoalsAttempted ~ TotalRebounds, data = NBAData) #DataWrangling5
+summary(linearMod)
+```
+In the code block above, I ran a linear regression model to determine whether the total rebounds had an effect on the goal that was trying to support my alignment from the previous chart. Based on the above summary, the significance test of whether total rebounds have an effect on the attempted shot goal shows that there is indeed a significant relationship between the above variables.
+
+###Conclusion
+In conclusion there are evidence showing that there are more more three-pointers made and more and more rebounds taken every game. Since the increase of rebounds indicates that the game pays are getting faster so there are opportunities for players to score.
+
+
+
+
+
+
